@@ -1,10 +1,18 @@
 package virtualmachine;
 
-public interface VirtualMachine {
-	//run program
-	public void run();
-	//returns the program
-	public String program();
-	//returns true iff program has no more instructions left
-	public boolean terminated();
+/**
+ * An interface that represents virtual machines that run BrainF
+ */
+public interface VirtualMachine extends Runnable {
+
+	/**
+	runs the virtual machine
+	 */
+	void run();
+
+	/**
+	 * Returns whether the machine has stopped running
+	 * @return {@code true} if and only if the machine has halted
+	 */
+	boolean terminated();
 }

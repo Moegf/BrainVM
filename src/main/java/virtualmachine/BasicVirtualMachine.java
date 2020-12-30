@@ -7,22 +7,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+/**
+ * A virtual machine that runs BrainF programs symbol by symbol, as opposed to applying optimizations.
+ */
 public class BasicVirtualMachine implements VirtualMachine {
 	
 	private static final byte DEFAULT_MEMORY_VALUE = 0;
 	private static final byte DEFAULT_INPUT_VALUE = 0;
 	
-	String program;
-	int instructionPointer;
+	private String program;
+	private int instructionPointer;
 	
-	Map<Integer, Byte> memoryTape;
-	int memoryPointer;
+	private Map<Integer, Byte> memoryTape;
+	private int memoryPointer;
 	
 	Optional<OutputStream> outputStream;
 	Optional<InputStream> inputStream;
-	
-	Optional<Integer> clockSpeed;
 	
 	private BasicVirtualMachine(Builder builder) {
 		this.program = builder.program;
@@ -33,36 +35,51 @@ public class BasicVirtualMachine implements VirtualMachine {
 		this.memoryPointer = 0;
 		this.instructionPointer = 0;
 	}
-	
+
+	/**
+	 * Builder class for {@link BasicVirtualMachine}
+	 */
 	public static class Builder {
-		String program;
+		private String program;
 		
-		Optional<InputStream> inputStream = Optional.empty();
-		Optional<OutputStream> outputStream = Optional.empty();
-		Optional<Integer> clockSpeed = Optional.empty();
-		
-		Builder(String program) {
+		private Optional<InputStream> inputStream = Optional.empty();
+		private Optional<OutputStream> outputStream = Optional.empty();
+
+		/**
+		 * Creates a builder object for {@link BasicVirtualMachine}
+		 * @param program The BrainF Program
+		 */
+		public Builder(String program) {
 			this.program = program;
 		}
-		
+
+		/**
+		 * Sets the input stream for the virtual machine
+		 * @param inputStream The {@link InputStream}
+		 * @return The {@link Builder} Object
+		 */
 		public Builder inputStream(InputStream inputStream) {
 			this.inputStream = Optional.of(inputStream);
 			return this;
 		}
-		
+
+		/**
+		 * Sets the output stream for the virtual machine
+		 * @param outputStream The {@link OutputStream}
+		 * @return	The {@link Builder} Object
+		 */
 		public Builder outputStream(OutputStream outputStream) {
 			this.outputStream = Optional.of(outputStream);
 			return this;
 		}
-		
+
+		/**
+		 * Builds the virtual machine
+		 * @return The {@link BasicVirtualMachine}
+		 */
 		public BasicVirtualMachine build() {
 			return new BasicVirtualMachine(this);
 		}
-	}
-	
-	@Override
-	public String program() {
-		return program;
 	}
 
 
@@ -72,8 +89,12 @@ public class BasicVirtualMachine implements VirtualMachine {
 			step();
 		}
 	}
-	
-	//run with a specified pause between each step in milliseconds
+
+	/**
+	 * Runs the virtual machine with a specified delay in milliseconds between each instruction
+	 * @param delay the delay in milliseconds
+	 * @throws InterruptedException
+	 */
 	public void run(int delay) throws InterruptedException {
 		while(instructionPointer < program.length()) {
 			step();
@@ -81,6 +102,9 @@ public class BasicVirtualMachine implements VirtualMachine {
 		}
 	}
 
+	/**
+	 * Execute a single instruction on the virtual machine.
+	 */
 	public void step() {
 		if(terminated())
 			throw new IllegalStateException("The program has terminated and cannot be stepped");
@@ -164,10 +188,38 @@ public class BasicVirtualMachine implements VirtualMachine {
 		instructionPointer = testPointer + 1;
 	}
 	
-	public static void main(String[] args) {
-		String program = "";
-		VirtualMachine vm = new Builder(program).outputStream(System.out).build();
-		vm.run();
+	public static void main(String[] args) throws InterruptedException {
+		String program = ">+++++++++[<++++++++>-]<.>++++++[<+++++>-]<-.+++++++..+++.>>\n" +
+				"+++++++[<++++++>-]<++.------------.<++++++++.--------.+++.------.--------.\n" +
+				">+.>++++++++++.";
+		BasicVirtualMachine vm = new Builder(program).outputStream(System.out).build();
+		while(!vm.terminated()) {
+			vm.step();
+			Thread.sleep(10);
+			System.out.println(vm.toString());
+		}
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder("Basic Virtual Machine: |");
+		//TODO: This is not efficient or pleasant to read
+		int lowestValue = memoryTape.entrySet().stream().collect(Collectors.minBy((firstPair, secondPair) -> firstPair.getKey() - secondPair.getKey())).map(Map.Entry::getKey).orElseGet(()->0);
+		int highestValue = memoryTape.entrySet().stream().collect(Collectors.maxBy((firstPair, secondPair) -> firstPair.getKey() - secondPair.getKey())).map(Map.Entry::getKey).orElseGet(()->0);
+
+		for(int i = lowestValue; i <= highestValue; i++){
+
+			if(i == memoryPointer)
+				builder.append(">");
+
+			builder.append(memoryTape.getOrDefault(i, (byte)0));
+
+			if(i == memoryPointer)
+				builder.append("<");
+
+			builder.append('|');
+		}
+
+		return builder.toString();
+	}
 }
