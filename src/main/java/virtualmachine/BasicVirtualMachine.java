@@ -187,18 +187,6 @@ public class BasicVirtualMachine implements VirtualMachine {
 		
 		instructionPointer = testPointer + 1;
 	}
-	
-	public static void main(String[] args) throws InterruptedException {
-		String program = ">+++++++++[<++++++++>-]<.>++++++[<+++++>-]<-.+++++++..+++.>>\n" +
-				"+++++++[<++++++>-]<++.------------.<++++++++.--------.+++.------.--------.\n" +
-				">+.>++++++++++.";
-		BasicVirtualMachine vm = new Builder(program).outputStream(System.out).build();
-		while(!vm.terminated()) {
-			vm.step();
-			Thread.sleep(10);
-			System.out.println(vm.toString());
-		}
-	}
 
 	@Override
 	public String toString() {
